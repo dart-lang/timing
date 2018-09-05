@@ -5,8 +5,8 @@
 import 'dart:async';
 
 import 'package:test/test.dart';
-import 'package:timings/src/clock.dart';
-import 'package:timings/src/timings.dart';
+import 'package:timing/src/clock.dart';
+import 'package:timing/src/timing.dart';
 
 _noop() {}
 
