@@ -17,7 +17,7 @@ jobs:
       dart: dev
     - stage: unit_test
       name: "SDK: dev - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh test_06
       env: PKG="."
       dart: dev
 
