@@ -1,36 +1,17 @@
-# Created with https://github.com/dart-lang/mono_repo
 language: dart
 
-# Custom configuration
-sudo: required
-addons:
-  chrome: stable
-after_failure:
-  - tool/report_failure.sh
+dart:
+  - dev
 
-jobs:
-  include:
-    - stage: analyze_and_format
-      name: "SDK: dev - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
-      env: PKG="."
-      dart: dev
-    - stage: unit_test
-      name: "SDK: dev - TASKS: pub run build_runner test"
-      script: ./tool/travis.sh test
-      env: PKG="."
-      dart: dev
+dart_task:
+- dartfmt
+- dartanalyzer: --fatal-infos --fatal-warnings .
+- test
 
-stages:
-  - analyze_and_format
-  - unit_test
-
-# Only building master means that we don't run two builds for each pull request.
 branches:
   only:
-    - master
+  - master
 
 cache:
   directories:
-    - "$HOME/.pub-cache"
-    - .dart_tool/build
+  - $HOME/.pub-cache

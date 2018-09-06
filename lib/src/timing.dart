@@ -192,22 +192,28 @@ class NoOpSyncTimeTracker implements SyncTimeTracker {
   static final sharedInstance = NoOpSyncTimeTracker();
 
   @override
-  Duration get duration => throw UnimplementedError();
+  Duration get duration =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  DateTime get startTime => throw UnimplementedError();
+  DateTime get startTime =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  DateTime get stopTime => throw UnimplementedError();
+  DateTime get stopTime =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isStarted => throw UnimplementedError();
+  bool get isStarted =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isTracking => throw UnimplementedError();
+  bool get isTracking =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isFinished => throw UnimplementedError();
+  bool get isFinished =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
   R track<T, R extends FutureOr<T>>(R Function() action) => action();
@@ -329,28 +335,36 @@ class NoOpAsyncTimeTracker implements AsyncTimeTracker {
   static final sharedInstance = NoOpAsyncTimeTracker();
 
   @override
-  Duration get duration => throw UnimplementedError();
+  Duration get duration =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  Duration get innerDuration => throw UnimplementedError();
+  Duration get innerDuration =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  DateTime get startTime => throw UnimplementedError();
+  DateTime get startTime =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  DateTime get stopTime => throw UnimplementedError();
+  DateTime get stopTime =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  List<TimeSlice> get slices => throw UnimplementedError();
+  List<TimeSlice> get slices =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isStarted => throw UnimplementedError();
+  bool get isStarted =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isTracking => throw UnimplementedError();
+  bool get isTracking =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  bool get isFinished => throw UnimplementedError();
+  bool get isFinished =>
+      throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
   R track<T, R extends FutureOr<T>>(R Function() action) => action();
