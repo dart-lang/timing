@@ -8,11 +8,13 @@ import 'dart:async';
 typedef DateTime _Clock();
 DateTime _defaultClock() => DateTime.now();
 
+const _ZoneKey = #timing_Clock;
+
 /// Returns the current [DateTime].
 ///
 /// May be overridden for tests using [scopeClock].
-DateTime now() => (Zone.current[_Clock] as _Clock ?? _defaultClock)();
+DateTime now() => (Zone.current[_ZoneKey] as _Clock ?? _defaultClock)();
 
 /// Runs [f], with [clock] scoped whenever [now] is called.
 T scopeClock<T>(DateTime clock(), T f()) =>
-    runZoned(f, zoneValues: {_Clock: clock});
+    runZoned(f, zoneValues: {_ZoneKey: clock});

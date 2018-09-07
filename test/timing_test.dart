@@ -197,8 +197,8 @@ main() {
 
   group('AsyncTimeTracker.simple', () {
     setUp(() {
-      tracker = AsyncTimeTracker.simple();
-      nestedTracker = AsyncTimeTracker.simple();
+      tracker = SimpleAsyncTimeTracker();
+      nestedTracker = SimpleAsyncTimeTracker();
     });
 
     canHandleSync();
@@ -254,9 +254,7 @@ main() {
         time = time.add(const Duration(seconds: 32));
         completer.complete();
       });
-      await Future.wait([
-        future,
-      ]);
+      await future;
       expect(asyncTracker.isFinished, true);
       expect(asyncTracker.startTime, startTime);
       expect(asyncTracker.stopTime.isBefore(time), true);

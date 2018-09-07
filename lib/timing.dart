@@ -8,4 +8,6 @@ export 'src/timing.dart'
         TimeSliceGroup,
         TimeTracker,
         SyncTimeTracker,
-        AsyncTimeTracker;
+        SimpleAsyncTimeTracker,
+        AsyncTimeTracker,
+        NoOpTimeTracker;

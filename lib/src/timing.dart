@@ -11,7 +11,7 @@ import 'clock.dart';
 class TimeSlice {
   /// The total duration of this operation, equivalent to taking the difference
   /// between [stopTime] and [startTime].
-  Duration get duration => stopTime?.difference(startTime);
+  Duration get duration => stopTime.difference(startTime);
 
   final DateTime startTime;
 
@@ -37,7 +37,7 @@ class TimeSliceGroup implements TimeSlice {
   /// The total duration of this operation, equivalent to taking the difference
   /// between [stopTime] and [startTime].
   @override
-  Duration get duration => stopTime?.difference(startTime);
+  Duration get duration => stopTime.difference(startTime);
 
   /// Sum of [duration]s of all [slices].
   ///
@@ -49,7 +49,7 @@ class TimeSliceGroup implements TimeSlice {
           duration +
           (slice is TimeSliceGroup ? slice.innerDuration : slice.duration));
 
-  TimeSliceGroup([List<TimeSlice> slices]) : slices = slices ?? [];
+  TimeSliceGroup(List<TimeSlice> this.slices);
 
   @override
   String toString() => slices.toString();
@@ -71,19 +71,11 @@ abstract class TimeTracker implements TimeSlice {
   /// Equivalent of `isTracking || isFinished`
   bool get isStarted;
 
-  R track<T, R extends FutureOr<T>>(R Function() action);
+  T track<T>(T Function() action);
 }
 
-abstract class SyncTimeTracker implements TimeTracker {
-  factory SyncTimeTracker() => SyncTimeTrackerImpl();
-
-  factory SyncTimeTracker.noOp() => NoOpSyncTimeTracker.sharedInstance;
-}
-
-/// Implementation of a real [SyncTimeTracker].
-///
-/// Use [SyncTimeTracker] factory to get an instance.
-class SyncTimeTrackerImpl implements TimeSlice, SyncTimeTracker {
+/// Tracks only sync actions
+class SyncTimeTracker implements TimeTracker {
   /// When this operation started, call [start] to set this.
   @override
   DateTime get startTime => _startTime;
@@ -96,17 +88,28 @@ class SyncTimeTrackerImpl implements TimeSlice, SyncTimeTracker {
 
   /// Start tracking this operation, must only be called once, before [stop].
   void start() {
-    assert(_startTime == null && _stopTime == null);
+    if (isStarted) {
+      throw StateError('Can not be started twice');
+    }
     _startTime = now();
   }
 
   /// Stop tracking this operation, must only be called once, after [start].
   void stop() {
-    assert(_startTime != null && _stopTime == null);
+    if (!isTracking) {
+      throw StateError('Can be only called while tracking');
+    }
     _stopTime = now();
   }
 
-  TimeSlice splitNow() {
+  /// Splits tracker into two slices
+  ///
+  /// Returns new [TimeSlice] started on [startTime] and ended now.
+  /// Modifies [startTime] of tracker to current time point
+  ///
+  /// Don't change state of tracker. Can be called only while [isTracking], and
+  /// tracker will sill be tracking after call.
+  TimeSlice split() {
     if (!isTracking) {
       throw StateError('Can be only called while tracking');
     }
@@ -117,7 +120,7 @@ class SyncTimeTrackerImpl implements TimeSlice, SyncTimeTracker {
   }
 
   @override
-  R track<T, R extends FutureOr<T>>(R Function() action) {
+  T track<T>(T Function() action) {
     if (isStarted) {
       throw StateError('Can not be tracked twice');
     }
@@ -142,54 +145,34 @@ class SyncTimeTrackerImpl implements TimeSlice, SyncTimeTracker {
   Duration get duration => stopTime?.difference(startTime);
 }
 
-/// Implementation of [SyncTimeTracker] that can handle async actions
-///
 /// Async actions returning [Future] will be tracked as single sync time span
 /// from the beginning of execution till completion of future
-///
-/// Use [AsyncTimeTracker.simple] factory to get an instance.
-class SimpleAsyncTimeTrackerImpl extends TimeSliceGroup
-    implements AsyncTimeTracker {
+class SimpleAsyncTimeTracker extends SyncTimeTracker {
   @override
-  R track<T, R extends FutureOr<T>>(R Function() action) {
+  T track<T>(T Function() action) {
     if (isStarted) {
       throw StateError('Can not be tracked twice');
     }
-    R result;
-    var tracker = SyncTimeTrackerImpl();
-    slices.add(tracker);
-    tracker.start();
+    T result;
+    start();
     try {
       result = action();
     } catch (_) {
-      tracker.stop();
+      stop();
       rethrow;
     }
-    if (result is Future<T>) {
-      return result.whenComplete(tracker.stop) as R;
+    if (result is Future) {
+      return result.whenComplete(stop) as T;
     } else {
-      tracker.stop();
+      stop();
       return result;
     }
   }
-
-  @override
-  bool get isStarted => slices.isNotEmpty;
-
-  @override
-  bool get isTracking =>
-      slices.isNotEmpty && (slices.first as SyncTimeTracker).isTracking;
-
-  @override
-  bool get isFinished =>
-      slices.isNotEmpty && (slices.first as SyncTimeTracker).isFinished;
 }
 
 /// No-op implementation of [SyncTimeTracker] that does nothing.
-///
-/// Use [SyncTimeTracker.noOp] factory to get an instance.
-class NoOpSyncTimeTracker implements SyncTimeTracker {
-  static final sharedInstance = NoOpSyncTimeTracker();
+class NoOpTimeTracker implements TimeTracker {
+  static final sharedInstance = NoOpTimeTracker();
 
   @override
   Duration get duration =>
@@ -216,25 +199,22 @@ class NoOpSyncTimeTracker implements SyncTimeTracker {
       throw UnsupportedError('Unsupported in no-op implementation');
 
   @override
-  R track<T, R extends FutureOr<T>>(R Function() action) => action();
+  T track<T>(T Function() action) => action();
 }
 
-abstract class AsyncTimeTracker implements TimeSliceGroup, TimeTracker {
-  factory AsyncTimeTracker({bool trackNested = true}) =>
-      AsyncTimeTrackerImpl(trackNested);
-
-  factory AsyncTimeTracker.simple() => SimpleAsyncTimeTrackerImpl();
-
-  factory AsyncTimeTracker.noOp() => NoOpAsyncTimeTracker.sharedInstance;
-}
-
-/// Implementation of a real [AsyncTimeTracker].
+/// Track all async execution as disjoint time [slices] in ascending order.
 ///
-/// Use [AsyncTimeTracker] factory to get an instance.
-class AsyncTimeTrackerImpl extends TimeSliceGroup implements AsyncTimeTracker {
+/// Can [track] both async and sync actions.
+/// Can exclude time of tested trackers.
+///
+/// If tracked action spawns some dangled async executions behavior is't
+/// defined. Tracked might or might not track time of such executions
+class AsyncTimeTracker extends TimeSliceGroup implements TimeTracker {
   final bool trackNested;
 
-  AsyncTimeTrackerImpl(this.trackNested);
+  static const _ZoneKey = #timing_AsyncTimeTracker;
+
+  AsyncTimeTracker({this.trackNested = true}) : super([]);
 
   T _trackSyncSlice<T>(ZoneDelegate parent, Zone zone, T Function() action) {
     // Ignore dangling runs after tracker completes
@@ -245,17 +225,21 @@ class AsyncTimeTrackerImpl extends TimeSliceGroup implements AsyncTimeTracker {
     var isNestedRun = slices.isNotEmpty &&
         slices.last is SyncTimeTracker &&
         (slices.last as SyncTimeTracker).isTracking;
-    var isExcludedNestedTrack =
-        !trackNested && zone[AsyncTimeTrackerImpl] != this;
+    var isExcludedNestedTrack = !trackNested && zone[_ZoneKey] != this;
 
     // Exclude nested sync tracks
     if (isNestedRun && isExcludedNestedTrack) {
-      var timer = slices.last as SyncTimeTrackerImpl;
-      slices.last = parent.run(zone, timer.splitNow);
+      var timer = slices.last as SyncTimeTracker;
+      // Split already tracked time into new slice.
+      // Replace tracker in slices.last with splitted slice, to indicate for
+      // recursive calls that we not tracking.
+      slices.last = parent.run(zone, timer.split);
       try {
         return action();
       } finally {
-        parent.run(zone, timer.splitNow); // discard
+        // Split tracker again and discard slice that was spend in nested tracker
+        parent.run(zone, timer.split);
+        // Add tracker back to list of slices and continue tracking
         slices.add(timer);
       }
     }
@@ -279,37 +263,37 @@ class AsyncTimeTrackerImpl extends TimeSliceGroup implements AsyncTimeTracker {
 
   static final asyncTimeTrackerZoneSpecification = ZoneSpecification(
     run: <R>(Zone self, ZoneDelegate parent, Zone zone, R Function() f) {
-      var tracker = self[AsyncTimeTrackerImpl] as AsyncTimeTrackerImpl;
+      var tracker = self[_ZoneKey] as AsyncTimeTracker;
       return tracker._trackSyncSlice(parent, zone, () => parent.run(zone, f));
     },
     runUnary: <R, T>(Zone self, ZoneDelegate parent, Zone zone, R Function(T) f,
         T arg) {
-      var tracker = self[AsyncTimeTrackerImpl] as AsyncTimeTrackerImpl;
+      var tracker = self[_ZoneKey] as AsyncTimeTracker;
       return tracker._trackSyncSlice(
           parent, zone, () => parent.runUnary(zone, f, arg));
     },
     runBinary: <R, T1, T2>(Zone self, ZoneDelegate parent, Zone zone,
         R Function(T1, T2) f, T1 arg1, T2 arg2) {
-      var tracker = self[AsyncTimeTrackerImpl] as AsyncTimeTrackerImpl;
+      var tracker = self[_ZoneKey] as AsyncTimeTracker;
       return tracker._trackSyncSlice(
           parent, zone, () => parent.runBinary(zone, f, arg1, arg2));
     },
   );
 
   @override
-  R track<T, R extends FutureOr<T>>(R Function() action) {
+  T track<T>(T Function() action) {
     if (isStarted) {
       throw StateError('Can not be tracked twice');
     }
     _tracking = true;
     var result = runZoned(action,
         zoneSpecification: asyncTimeTrackerZoneSpecification,
-        zoneValues: {AsyncTimeTrackerImpl: this});
-    if (result is Future<T>) {
+        zoneValues: {_ZoneKey: this});
+    if (result is Future) {
       return result
           // Break possible sync processing of future completion, so slice trackers can be finished
           .whenComplete(() => Future.value())
-          .whenComplete(() => _tracking = false) as R;
+          .whenComplete(() => _tracking = false) as T;
     } else {
       _tracking = false;
       return result;
@@ -326,46 +310,4 @@ class AsyncTimeTrackerImpl extends TimeSliceGroup implements AsyncTimeTracker {
 
   @override
   bool get isTracking => _tracking == true;
-}
-
-/// No-op implementation of [AsyncTimeTracker] that does nothing.
-///
-/// Use [AsyncTimeTracker.noOp] factory to get an instance.
-class NoOpAsyncTimeTracker implements AsyncTimeTracker {
-  static final sharedInstance = NoOpAsyncTimeTracker();
-
-  @override
-  Duration get duration =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  Duration get innerDuration =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  DateTime get startTime =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  DateTime get stopTime =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  List<TimeSlice> get slices =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  bool get isStarted =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  bool get isTracking =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  bool get isFinished =>
-      throw UnsupportedError('Unsupported in no-op implementation');
-
-  @override
-  R track<T, R extends FutureOr<T>>(R Function() action) => action();
 }
