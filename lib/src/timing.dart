@@ -76,29 +76,25 @@ abstract class TimeTracker implements TimeSlice {
 
 /// Tracks only sync actions
 class SyncTimeTracker implements TimeTracker {
-  /// When this operation started, call [start] to set this.
+  /// When this operation started, call [_start] to set this.
   @override
   DateTime get startTime => _startTime;
   DateTime _startTime;
 
-  /// When this operation stopped, call [stop] to set this.
+  /// When this operation stopped, call [_stop] to set this.
   @override
   DateTime get stopTime => _stopTime;
   DateTime _stopTime;
 
-  /// Start tracking this operation, must only be called once, before [stop].
-  void start() {
-    if (isStarted) {
-      throw StateError('Can not be started twice');
-    }
+  /// Start tracking this operation, must only be called once, before [_stop].
+  void _start() {
+    assert(_startTime == null && _stopTime == null);
     _startTime = now();
   }
 
-  /// Stop tracking this operation, must only be called once, after [start].
-  void stop() {
-    if (!isTracking) {
-      throw StateError('Can be only called while tracking');
-    }
+  /// Stop tracking this operation, must only be called once, after [_start].
+  void _stop() {
+    assert(_startTime != null && _stopTime == null);
     _stopTime = now();
   }
 
@@ -124,11 +120,11 @@ class SyncTimeTracker implements TimeTracker {
     if (isStarted) {
       throw StateError('Can not be tracked twice');
     }
-    start();
+    _start();
     try {
       return action();
     } finally {
-      stop();
+      _stop();
     }
   }
 
@@ -154,17 +150,17 @@ class SimpleAsyncTimeTracker extends SyncTimeTracker {
       throw StateError('Can not be tracked twice');
     }
     T result;
-    start();
+    _start();
     try {
       result = action();
     } catch (_) {
-      stop();
+      _stop();
       rethrow;
     }
     if (result is Future) {
-      return result.whenComplete(stop) as T;
+      return result.whenComplete(_stop) as T;
     } else {
-      stop();
+      _stop();
       return result;
     }
   }
