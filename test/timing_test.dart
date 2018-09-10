@@ -318,6 +318,39 @@ main() {
       expect(nestedAsyncTracker2.slices.length, 1);
     });
 
+    test('Can track all on grand-parent level and exclude grand-childrens from parent', () {
+      tracker = asyncTracker = AsyncTimeTracker(trackNested: true);
+      nestedAsyncTracker = AsyncTimeTracker(trackNested: false);
+      var nestedAsyncTracker2 = AsyncTimeTracker();
+      scopedTrack(() {
+        time = time.add(const Duration(seconds: 1));
+        nestedAsyncTracker.track(() {
+          time = time.add(const Duration(seconds: 2));
+          nestedAsyncTracker2.track(() {
+            time = time.add(const Duration(seconds: 4));
+          });
+          time = time.add(const Duration(seconds: 8));
+        });
+        time = time.add(const Duration(seconds: 16));
+      });
+      expect(asyncTracker.isFinished, true);
+      expect(asyncTracker.startTime, startTime);
+      expect(asyncTracker.stopTime, time);
+      expect(asyncTracker.duration, const Duration(seconds: 31));
+      expect(asyncTracker.innerDuration, const Duration(seconds: 31));
+      expect(asyncTracker.slices.length, 1);
+      expect(nestedAsyncTracker.startTime.isAfter(startTime), true);
+      expect(nestedAsyncTracker.stopTime.isBefore(time), true);
+      expect(nestedAsyncTracker.duration, const Duration(seconds: 14));
+      expect(nestedAsyncTracker.innerDuration, const Duration(seconds: 10));
+      expect(nestedAsyncTracker.slices.length, greaterThan(1));
+      expect(nestedAsyncTracker2.startTime.isAfter(startTime), true);
+      expect(nestedAsyncTracker2.stopTime.isBefore(time), true);
+      expect(nestedAsyncTracker2.duration, const Duration(seconds: 4));
+      expect(nestedAsyncTracker2.innerDuration, const Duration(seconds: 4));
+      expect(nestedAsyncTracker2.slices.length, 1);
+    });
+
     test('Can exclude nested async', () async {
       tracker = asyncTracker = AsyncTimeTracker(trackNested: false);
       await scopedTrack(() async {
