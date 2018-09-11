@@ -318,7 +318,9 @@ main() {
       expect(nestedAsyncTracker2.slices.length, 1);
     });
 
-    test('Can track all on grand-parent level and exclude grand-childrens from parent', () {
+    test(
+        'Can track all on grand-parent level and '
+        'exclude grand-childrens from parent', () {
       tracker = asyncTracker = AsyncTimeTracker(trackNested: true);
       nestedAsyncTracker = AsyncTimeTracker(trackNested: false);
       var nestedAsyncTracker2 = AsyncTimeTracker();

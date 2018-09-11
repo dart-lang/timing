@@ -105,7 +105,7 @@ class SyncTimeTracker implements TimeTracker {
   ///
   /// Don't change state of tracker. Can be called only while [isTracking], and
   /// tracker will sill be tracking after call.
-  TimeSlice split() {
+  TimeSlice _split() {
     if (!isTracking) {
       throw StateError('Can be only called while tracking');
     }
@@ -229,12 +229,12 @@ class AsyncTimeTracker extends TimeSliceGroup implements TimeTracker {
       // Split already tracked time into new slice.
       // Replace tracker in slices.last with splitted slice, to indicate for
       // recursive calls that we not tracking.
-      slices.last = parent.run(zone, timer.split);
+      slices.last = parent.run(zone, timer._split);
       try {
         return action();
       } finally {
         // Split tracker again and discard slice that was spend in nested tracker
-        parent.run(zone, timer.split);
+        parent.run(zone, timer._split);
         // Add tracker back to list of slices and continue tracking
         slices.add(timer);
       }
