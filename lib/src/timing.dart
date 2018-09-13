@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library timing;
-
 import 'dart:async';
 
 import 'package:json_annotation/json_annotation.dart';
@@ -26,11 +24,9 @@ class TimeSlice {
 
   TimeSlice(this.startTime, this.stopTime);
 
-  /// Constructs TimeSlice from JSON representation
   factory TimeSlice.fromJson(Map<String, dynamic> json) =>
       _$TimeSliceFromJson(json);
 
-  /// Converts to JSON representation
   Map<String, dynamic> toJson() => _$TimeSliceToJson(this);
 
   @override
