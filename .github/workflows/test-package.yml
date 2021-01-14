@@ -62,7 +62,7 @@ jobs:
           version: ${{ matrix.version }}
       - id: install
         name: Install dependencies
-        run: dart pub get
+        run: pub get
       - name: Run VM tests
-        run: dart test --platform vm
+        run: pub run test --platform vm
         if: always() && steps.install.outcome == 'success'
