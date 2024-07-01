@@ -36,7 +36,6 @@ print('${tracker.duration}');
 ```
 
 ## SimpleAsyncTimeTracker
-### To track async operations:
 
 ```dart
 var tracker = SimpleAsyncTimeTracker();
