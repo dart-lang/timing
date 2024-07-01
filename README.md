@@ -22,7 +22,7 @@ await tracker.track(() async {
 // Use results
 print('${tracker.duration} ${tracker.innerDuration} ${tracker.slices}');
 ```
-## SyncTimeTracker
+### SyncTimeTracker
 
 ```dart
 var tracker = SyncTimeTracker();
