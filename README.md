@@ -23,7 +23,6 @@ await tracker.track(() async {
 print('${tracker.duration} ${tracker.innerDuration} ${tracker.slices}');
 ```
 ## SyncTimeTracker
-### To track synchronous operations:
 
 ```dart
 var tracker = SyncTimeTracker();
