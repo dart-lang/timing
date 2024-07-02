@@ -35,7 +35,7 @@ print('${tracker.duration}');
 
 ```
 
-## SimpleAsyncTimeTracker
+### SimpleAsyncTimeTracker
 
 ```dart
 var tracker = SimpleAsyncTimeTracker();
