@@ -63,7 +63,6 @@ var timeSliceGroup = TimeSliceGroup([
   TimeSlice(DateTime.now().add(Duration(seconds: 3)), DateTime.now().add(Duration(seconds: 5))),
 ]);
 print(timeSliceGroup.innerDuration);
-
 ```
 
 ## Building
