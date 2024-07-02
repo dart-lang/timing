@@ -53,7 +53,6 @@ print('${tracker.duration}');
 ```dart
 var timeSlice = TimeSlice(DateTime.now(), DateTime.now().add(Duration(seconds: 5)));
 print(timeSlice.duration);
-
 ```
 
 ## TimeSliceGroup
