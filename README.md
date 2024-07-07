@@ -47,8 +47,9 @@ await tracker.track(() async {
 print('${tracker.duration}');
 
 ```
-## TimeSlice
-### Represents the timings of an operation, including its start time, stop time, and duration:
+### TimeSlice
+
+Represents the timings of an operation, including its start time, stop time, and duration:
 
 ```dart
 var timeSlice = TimeSlice(DateTime.now(), DateTime.now().add(Duration(seconds: 5)));
