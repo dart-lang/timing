@@ -57,7 +57,9 @@ print(timeSlice.duration);
 ```
 
 ## TimeSliceGroup
-### Represents the timings of an async operation, consisting of several sync slices and including total start time, stop time, and duration:
+
+Represents the timings of an async operation, consisting of several sync
+slices and including total start time, stop time, and duration:
 ```dart
 var timeSliceGroup = TimeSliceGroup([
   TimeSlice(DateTime.now(), DateTime.now().add(Duration(seconds: 2))),
